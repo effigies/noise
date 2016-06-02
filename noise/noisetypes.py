@@ -160,3 +160,48 @@ class BLAKE2b(Hash):
     BLOCKLEN = 128
     NAME = b'BLAKE2b'
     hash = blake2b_hash
+
+
+class NoiseBuffer(object):
+    """Pre-allocated bytestring buffer with append interface
+
+    Strict mode prevents increasing beyond the original buffer size,
+    while non-strict mode permits arbitrary appends.
+
+    When done appending, retrieve final values with bytes(...)
+    """
+    def __init__(self, nbytes=0, strict=False):
+        self.bfr = bytearray(nbytes)
+        self.length = 0
+        self.strict = strict
+
+    def __len__(self):
+        return self.length
+
+    def append(self, val):
+        """Append byte string val to buffer
+
+        If the result exceeds the length of the buffer, behavior
+        depends on whether instance was initialized as strict.
+
+        In strict mode, a ValueError is raised.
+        In non-strict mode, the buffer is extended as necessary.
+        """
+        new_len = self.length + len(val)
+        to_add = new_len - len(self.bfr)
+        if strict and to_add > 0:
+            raise ValueError("Cannot resize buffer")
+        self.bfr[self.length:new_len] = val
+
+    def __bytes__(self):
+        """Return immutable copy of buffer
+
+        In strict mode, return entire pre-allocated buffer, initialized
+        to 0x00 where not overwritten.
+
+        In non-strict mode, return only written bytes.
+        """
+        if self.strict:
+            return bytes(self.bfr)
+        else:
+            return bytes(self.bfr[:self.length])
