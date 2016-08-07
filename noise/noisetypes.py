@@ -1,5 +1,5 @@
 from collections import namedtuple
-from error import HashError
+from .error import HashError
 
 from pysodium import \
     crypto_aead_chacha20poly1305_encrypt as chachapoly_encrypt, \
@@ -189,9 +189,10 @@ class NoiseBuffer(object):
         """
         new_len = self.length + len(val)
         to_add = new_len - len(self.bfr)
-        if strict and to_add > 0:
+        if self.strict and to_add > 0:
             raise ValueError("Cannot resize buffer")
         self.bfr[self.length:new_len] = val
+        self.length = new_len
 
     def __bytes__(self):
         """Return immutable copy of buffer
